@@ -38,6 +38,9 @@ def register_manager(request):
 
         if password != confirm_password:
             errors["password"] = "Passwords do not match."
+            
+        if len(password) < 8:
+                errors["password"] = "Password must be at least 8 characters long."
 
         if errors:
             return render(request, "register_manager.html", {"errors": errors})
