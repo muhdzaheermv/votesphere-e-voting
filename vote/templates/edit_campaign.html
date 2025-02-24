@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Election Campaign</title>
+</head>
+<body>
+
+    <h2>Edit Campaign: {{ campaign.name }}</h2>
+    
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="text" name="name" value="{{ campaign.name }}" required><br>
+        <textarea name="description" required>{{ campaign.description }}</textarea><br>
+        <input type="datetime-local" name="start_time" value="{{ campaign.start_time|date:'Y-m-d\TH:i' }}" required><br>
+        <input type="datetime-local" name="end_time" value="{{ campaign.end_time|date:'Y-m-d\TH:i' }}" required><br>
+        <input type="file" name="image"><br>
+        <button type="submit">Update Campaign</button>
+    </form>
+
+</body>
+</html>

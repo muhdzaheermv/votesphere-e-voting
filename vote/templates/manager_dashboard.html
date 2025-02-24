@@ -2,40 +2,27 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manager Dashboard</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f4f4f4;
-            padding: 50px;
-        }
-        .container {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-            margin: auto;
-        }
-        a {
-            display: block;
-            margin: 10px;
-            padding: 10px;
-            background: #3498db;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-        }
-    </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2>Welcome to Manager Dashboard</h2>
-        <a href="/">Logout</a>
-    </div>
+    <h2>Welcome, {{ manager.fullname }}</h2>
+
+    <a href="/manager/{{ manager.id }}/profile/">
+        <button>View Profile</button>
+    </a>
+
+    <a href="/manager/{{ manager.id }}/profile/edit/">
+        <button>Edit Profile</button>
+    </a>
+
+    <a href="/campaigns/create/">
+        <button>Create Election Campaign</button>
+    </a>
+
+    <a href="/manager/{{ manager.id }}/campaigns/">
+        <button>View Campaigns</button>
+    </a>
 
 </body>
 </html>

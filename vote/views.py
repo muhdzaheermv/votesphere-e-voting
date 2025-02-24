@@ -1,10 +1,10 @@
-from django.shortcuts import render
+
+from django.shortcuts import render, redirect,get_object_or_404
+from .models import ElectionManager,ElectionCampaign,Election
 
 def index(request):
     return render(request, 'index.html')
 
-from django.shortcuts import render, redirect
-from .models import ElectionManager
 
 def register_manager(request):
     if request.method == "POST":
@@ -69,15 +69,112 @@ def login_manager(request):
 
         try:
             manager = ElectionManager.objects.get(username=username, password=password)
-            request.session["manager_id"] = manager.id  # Store session
-            return redirect("manager_dashboard")
+            return redirect("manager_dashboard", manager_id=manager.id)  # ✅ Pass manager_id correctly
         except ElectionManager.DoesNotExist:
             return render(request, "login_manager.html", {"error": "Invalid username or password"})
 
     return render(request, "login_manager.html")
 
 
-def manager_dashboard(request):
-    if "manager_id" not in request.session:
-        return redirect("login_manager")  # Redirect to login if not logged in
-    return render(request, "manager_dashboard.html")
+def manager_dashboard(request, manager_id):
+    manager = get_object_or_404(ElectionManager, id=manager_id)
+    return render(request, "manager_dashboard.html", {"manager": manager})
+
+def create_campaign(request):
+    if request.method == "POST":
+        name = request.POST["name"]
+        description = request.POST["description"]
+        start_time = request.POST["start_time"]
+        end_time = request.POST["end_time"]
+        image = request.FILES.get("image")
+
+        ElectionCampaign.objects.create(
+            name=name, description=description, start_time=start_time, end_time=end_time, image=image
+        )
+
+        return redirect("campaign_list")
+
+    return render(request, "create_campaign.html")
+
+# List All Campaigns
+def campaign_list(request, manager_id):
+    campaigns = ElectionCampaign.objects.all()
+    manager = get_object_or_404(ElectionManager, id=manager_id)  # ✅ Ensure manager is retrieved
+    return render(request, "campaign_list.html", {"campaigns": campaigns, "manager": manager})
+
+
+# Edit Election Campaign
+def edit_campaign(request, campaign_id):
+    campaign = get_object_or_404(ElectionCampaign, id=campaign_id)
+
+    if request.method == "POST":
+        campaign.name = request.POST.get("name", campaign.name)  # Avoids KeyError
+        campaign.description = request.POST.get("description", campaign.description)
+        campaign.start_time = request.POST.get("start_time", campaign.start_time)
+        campaign.end_time = request.POST.get("end_time", campaign.end_time)
+
+        if "image" in request.FILES:  # Checks if an image was uploaded
+            campaign.image = request.FILES["image"]
+
+        campaign.save()
+        return redirect("campaign_list")
+
+    return render(request, "edit_campaign.html", {"campaign": campaign})
+
+# Delete Election Campaign
+def delete_campaign(request, campaign_id):
+    campaign = get_object_or_404(ElectionCampaign, id=campaign_id)
+    campaign.delete()
+    return redirect("campaign_list")
+
+# Create Election Inside a Campaign
+def create_election(request, campaign_id):
+    campaign = get_object_or_404(ElectionCampaign, id=campaign_id)
+
+    if request.method == "POST":
+        name = request.POST["name"]  # ✅ Only the name is needed
+
+        Election.objects.create(campaign=campaign, name=name)
+        return redirect("campaign_list")
+
+    return render(request, "create_election.html", {"campaign": campaign})
+
+# Edit Election
+def edit_election(request, election_id):
+    election = get_object_or_404(Election, id=election_id)
+
+    if request.method == "POST":
+        election.name = request.POST.get("name", election.name)
+        election.save()
+        return redirect("campaign_list")
+
+    return render(request, "edit_election.html", {"election": election})
+
+
+def delete_election(request, election_id):
+    election = get_object_or_404(Election, id=election_id)
+    campaign_id = election.campaign.id
+    election.delete()
+    return redirect("campaign_list")
+
+def view_profile(request, manager_id):
+    manager = get_object_or_404(ElectionManager, id=manager_id)
+    return render(request, "view_profile.html", {"manager": manager})
+
+
+def edit_profile(request, manager_id):
+    manager = get_object_or_404(ElectionManager, id=manager_id)
+
+    if request.method == "POST":
+        manager.fullname = request.POST.get("fullname", manager.fullname)  # ✅ Ensure this matches models.py
+        manager.phone_number = request.POST.get("phone_number", manager.phone_number)
+        manager.email = request.POST.get("email", manager.email)
+        manager.address = request.POST.get("address", manager.address)
+
+        if "profile_picture" in request.FILES:
+            manager.profile_picture = request.FILES["profile_picture"]
+
+        manager.save()
+        return redirect("view_profile", manager_id=manager.id)
+
+    return render(request, "edit_profile.html", {"manager": manager})
