@@ -27,6 +27,11 @@ urlpatterns = [
     path("elections/<int:election_id>/candidates/create/", views.create_candidate, name="create_candidate"),
     path("candidates/<int:candidate_id>/delete/", views.delete_candidate, name="delete_candidate"),
     path("candidates/<int:candidate_id>/edit/", views.edit_candidate, name="edit_candidate"),
+
+    path("campaigns/<int:campaign_id>/voters/upload/", views.upload_voters, name="upload_voters"),
+    path("campaigns/<int:campaign_id>/voters/", views.voters_list, name="voters_list"),
+
+    path("campaigns/<int:campaign_id>/voters/delete_all/", views.delete_all_voters, name="delete_all_voters"),
     
 
 

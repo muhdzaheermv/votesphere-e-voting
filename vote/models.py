@@ -41,4 +41,19 @@ class Candidate(models.Model):
 
     def __str__(self):
         return self.name
+    
+class Voter(models.Model):
+    campaign = models.ForeignKey('ElectionCampaign', on_delete=models.CASCADE)  # ✅ Add this line
+    student_id = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=255)
+    date_of_birth = models.DateField()
+    email = models.EmailField(unique=True)
+    phone_number = models.CharField(max_length=15)
+    course_name = models.CharField(max_length=255)
+    department = models.CharField(max_length=255)
+    year_of_study = models.IntegerField()
+    semester = models.IntegerField()
+
+    def __str__(self):
+        return f"{self.name} ({self.student_id})"
 

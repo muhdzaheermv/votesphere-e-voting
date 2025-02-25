@@ -22,7 +22,7 @@
                         <a href="/elections/delete/{{ election.id }}/" 
                            onclick="return confirm('Are you sure you want to delete this election?');">Delete</a>
                         
-                        <!-- ✅ New "Add Candidate" Button -->
+                        <!-- ✅ "Add Candidate" Button -->
                         <a href="/elections/{{ election.id }}/candidates/create/">
                             <button>Add Candidate</button>
                         </a>
@@ -31,11 +31,22 @@
                     <li>No elections added</li>
                 {% endfor %}
             </ul>
+
+            <!-- ✅ Upload Voters Button -->
+            <a href="/campaigns/{{ campaign.id }}/voters/upload/">
+                <button>Upload Voters</button>
+            </a>
+
+            <!-- ✅ View Voters List Button -->
+            <a href="/campaigns/{{ campaign.id }}/voters/">
+                <button>View Voters List</button>
+            </a>
+
         </li>
     {% endfor %}
 </ul>
 
-<!-- ✅ Fixed Back Button URL -->
+<!-- ✅ Back Button to Dashboard -->
 <a href="/manager/{{ manager.id }}/dashboard/">
     <button>Back to Dashboard</button>
 </a>

@@ -1,6 +1,11 @@
-
+import pandas as pd
+import openpyxl
 from django.shortcuts import render, redirect,get_object_or_404
-from .models import ElectionManager,ElectionCampaign,Election,Candidate
+from .models import ElectionManager,ElectionCampaign,Election,Candidate,Voter
+from django.contrib import messages
+from django.core.files.storage import FileSystemStorage
+from django.core.exceptions import ValidationError
+from django.core.files.storage import default_storage
 
 def index(request):
     return render(request, 'index.html')
@@ -237,4 +242,58 @@ def edit_candidate(request, candidate_id):
         return redirect(f"/elections/{candidate.election.id}/candidates/create/")
 
     return render(request, "edit_candidate.html", {"candidate": candidate})
+
+def upload_voters(request, campaign_id):
+    if request.method == "POST":
+        file = request.FILES.get("excel_file")
+
+        if not file:
+            return render(request, "upload_voters.html", {"error": "No file uploaded"})
+
+        try:
+            # ✅ Read the Excel file
+            df = pd.read_excel(file)
+
+            # ✅ Ensure campaign exists
+            campaign = ElectionCampaign.objects.get(id=campaign_id)
+
+            # ✅ Iterate through rows and create voter objects
+            voters_to_create = []
+            for _, row in df.iterrows():
+                voters_to_create.append(Voter(
+                    campaign=campaign,  # ✅ Assign campaign_id
+                    student_id=row["Student ID"],
+                    name=row["Name"],
+                    date_of_birth=row["Date of Birth"],
+                    email=row["Email Address"],
+                    phone_number=row["Phone Number"],
+                    course_name=row["Course Name"],
+                    department=row["Department"],
+                    year_of_study=row["Year of Study"],
+                    semester=row["Semester"]
+                ))
+
+            # ✅ Bulk create voters for performance optimization
+            Voter.objects.bulk_create(voters_to_create)
+
+            return redirect("voters_list", campaign_id=campaign.id)
+
+        except KeyError as e:
+            return render(request, "upload_voters.html", {"error": f"Missing column in Excel: {str(e)}"})
+        except Exception as e:
+            return render(request, "upload_voters.html", {"error": f"Error: {str(e)}"})
+
+    return render(request, "upload_voters.html")
+
+
+def voters_list(request, campaign_id):
+    campaign = get_object_or_404(ElectionCampaign, id=campaign_id)
+    voters = Voter.objects.filter(campaign=campaign)
+    return render(request, "voter_list.html", {"campaign": campaign, "voters": voters})
+
+def delete_all_voters(request, campaign_id):
+    campaign = get_object_or_404(ElectionCampaign, id=campaign_id)
+    Voter.objects.filter(campaign=campaign).delete()
+    return redirect("voters_list", campaign_id=campaign.id)
+
 
