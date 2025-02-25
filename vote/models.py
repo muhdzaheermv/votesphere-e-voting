@@ -31,4 +31,13 @@ class Election(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.campaign.name}"
+    
+class Candidate(models.Model):
+    election = models.ForeignKey(Election, on_delete=models.CASCADE)  # ✅ Link to Election
+    name = models.CharField(max_length=255)
+    subtitle = models.CharField(max_length=255, blank=True, null=True)
+    profile_picture = models.ImageField(upload_to="candidate_profiles/", blank=True, null=True)
+
+    def __str__(self):
+        return self.name
 

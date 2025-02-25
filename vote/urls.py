@@ -23,6 +23,11 @@ urlpatterns = [
     path("manager/<int:manager_id>/profile/", views.view_profile, name="view_profile"),
     path("manager/<int:manager_id>/profile/edit/", views.edit_profile, name="edit_profile"),
 
+    path("elections/<int:election_id>/candidates/create/", views.create_candidate, name="create_candidate"),
+    path("candidates/<int:candidate_id>/delete/", views.delete_candidate, name="delete_candidate"),
+    path("candidates/<int:candidate_id>/edit/", views.edit_candidate, name="edit_candidate"),
+    
+
 
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

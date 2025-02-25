@@ -20,6 +20,12 @@
                         {{ election.name }}
                         <a href="/elections/edit/{{ election.id }}/">Edit</a>
                         <a href="/elections/delete/{{ election.id }}/" onclick="return confirm('Are you sure you want to delete this election?');">Delete</a>
+
+                        <!-- ✅ Add Candidate Button -->
+                        <a href="/elections/{{ election.id }}/candidates/create/">
+                            <button>Add Candidate</button>
+                        </a>
+
                     </li>
                 {% empty %}
                     <li>No elections added</li>

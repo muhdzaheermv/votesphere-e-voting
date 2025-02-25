@@ -1,6 +1,6 @@
 
 from django.shortcuts import render, redirect,get_object_or_404
-from .models import ElectionManager,ElectionCampaign,Election
+from .models import ElectionManager,ElectionCampaign,Election,Candidate
 
 def index(request):
     return render(request, 'index.html')
@@ -178,3 +178,48 @@ def edit_profile(request, manager_id):
         return redirect("view_profile", manager_id=manager.id)
 
     return render(request, "edit_profile.html", {"manager": manager})
+
+def create_candidate(request, election_id):
+    election = get_object_or_404(Election, id=election_id)
+    candidates = Candidate.objects.filter(election=election)  # ✅ Fetch candidates for this election
+
+    if request.method == "POST":
+        name = request.POST.get("name")
+        subtitle = request.POST.get("subtitle")
+        profile_picture = request.FILES.get("profile_picture")
+
+        if not name:
+            return render(request, "create_candidate.html", {"error": "Name is required.", "election": election, "candidates": candidates})
+
+        candidate = Candidate(election=election, name=name, subtitle=subtitle, profile_picture=profile_picture)
+        candidate.save()
+
+        # ✅ If "Create and Add Another" was clicked, reload form
+        if "create_another" in request.POST:
+            return render(request, "create_candidate.html", {"election": election, "candidates": candidates, "success": "Candidate added!"})
+
+        return redirect(f"/elections/{election.id}/candidates/")  # ✅ Redirect to candidate list
+
+    return render(request, "create_candidate.html", {"election": election, "candidates": candidates})
+
+def delete_candidate(request, candidate_id):
+    candidate = get_object_or_404(Candidate, id=candidate_id)
+    election_id = candidate.election.id
+    candidate.delete()
+    return redirect(f"/elections/{election_id}/candidates/create/")
+
+def edit_candidate(request, candidate_id):
+    candidate = get_object_or_404(Candidate, id=candidate_id)
+
+    if request.method == "POST":
+        candidate.name = request.POST.get("name")
+        candidate.subtitle = request.POST.get("subtitle")
+        
+        if request.FILES.get("profile_picture"):
+            candidate.profile_picture = request.FILES.get("profile_picture")
+        
+        candidate.save()
+        return redirect(f"/elections/{candidate.election.id}/candidates/create/")
+
+    return render(request, "edit_candidate.html", {"candidate": candidate})
+
