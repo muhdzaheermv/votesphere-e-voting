@@ -8,20 +8,35 @@
 
     <h2>Welcome, {{ manager.fullname }}</h2>
 
-    <a href="/manager/{{ manager.id }}/profile/">
-        <button>View Profile</button>
-    </a>
+    <h3>Your Election Campaigns</h3>
 
-    <a href="/manager/{{ manager.id }}/profile/edit/">
-        <button>Edit Profile</button>
-    </a>
+    {% if campaigns %}
+        <ul>
+            {% for campaign in campaigns %}
+                <li>
+                    <strong>{{ campaign.name }}</strong><br>
 
-    <a href="/campaigns/create/">
-        <button>Create Election Campaign</button>
-    </a>
+                    {% if campaign.image %}
+                        <img src="{{ campaign.image.url }}" width="100" height="100"><br>
+                    {% endif %}
 
-    <a href="/manager/{{ manager.id }}/campaigns/">
-        <button>View Campaigns</button>
+                    <p>{{ campaign.description }}</p>
+
+                    <a href="/campaigns/edit/{{ campaign.id }}/">Edit</a>
+                    <a href="/campaigns/delete/{{ campaign.id }}/" onclick="return confirm('Are you sure?');">
+                        Delete
+                    </a>
+                    <a href="/campaigns/{{ campaign.id }}/elections/create/">Add Election</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>You have not created any campaigns yet.</p>
+    {% endif %}
+
+    <!-- ✅ Fixed URL to include manager ID -->
+    <a href="/manager/{{ manager.id }}/campaigns/create/">
+        <button>Create New Campaign</button>
     </a>
 
 </body>

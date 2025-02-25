@@ -10,7 +10,7 @@ def register_manager(request):
     if request.method == "POST":
         id_number = request.POST.get("id_number")
         profile_picture = request.FILES.get("profile_picture")
-        full_name = request.POST.get("full_name")
+        fullname = request.POST.get("fullname")  # ✅ Ensure this matches the model field
         username = request.POST.get("username")
         phone_number = request.POST.get("phone_number")
         email = request.POST.get("email")
@@ -18,46 +18,37 @@ def register_manager(request):
         password = request.POST.get("password")
         confirm_password = request.POST.get("confirm_password")
 
-        errors = {}
+        # ✅ Check if passwords match
+        if password != confirm_password:
+            return render(request, "register_manager.html", {"error": "Passwords do not match."})
 
-        # Validation checks
-        if ElectionManager.objects.filter(id_number=id_number).exists():
-            errors["id_number"] = "ID number already exists."
-
-        if not full_name.replace(" ", "").isalpha():
-            errors["full_name"] = "Full name cannot contain numbers."
-
+        # ✅ Ensure unique fields are not duplicated
         if ElectionManager.objects.filter(username=username).exists():
-            errors["username"] = "Username already taken."
-
-        if not phone_number.isdigit() or len(phone_number) != 10:
-            errors["phone_number"] = "Phone number must be exactly 10 digits."
+            return render(request, "register_manager.html", {"error": "Username already exists."})
 
         if ElectionManager.objects.filter(email=email).exists():
-            errors["email"] = "Email already registered."
+            return render(request, "register_manager.html", {"error": "Email already registered."})
 
-        if password != confirm_password:
-            errors["password"] = "Passwords do not match."
-            
-        if len(password) < 8:
-                errors["password"] = "Password must be at least 8 characters long."
+        if ElectionManager.objects.filter(id_number=id_number).exists():
+            return render(request, "register_manager.html", {"error": "ID number already exists."})
 
-        if errors:
-            return render(request, "register_manager.html", {"errors": errors})
+        if ElectionManager.objects.filter(phone_number=phone_number).exists():
+            return render(request, "register_manager.html", {"error": "Phone number already registered."})
 
-        # Create new Election Manager
+        # ✅ Create Election Manager
         manager = ElectionManager(
             id_number=id_number,
             profile_picture=profile_picture,
-            full_name=full_name,
+            fullname=fullname,  # ✅ Matches model field name
             username=username,
             phone_number=phone_number,
             email=email,
             address=address,
-            password=password  # In real applications, hash the password
+            password=password  # ⚠️ In a real project, hash passwords before saving!
         )
         manager.save()
-        return redirect("login_manager")
+
+        return redirect("/login_manager/")  # ✅ Redirect to login after successful registration
 
     return render(request, "register_manager.html")
 
@@ -78,23 +69,36 @@ def login_manager(request):
 
 def manager_dashboard(request, manager_id):
     manager = get_object_or_404(ElectionManager, id=manager_id)
-    return render(request, "manager_dashboard.html", {"manager": manager})
 
-def create_campaign(request):
+    # ✅ Fetch campaigns only created by this manager
+    campaigns = ElectionCampaign.objects.filter(manager=manager)
+
+    return render(request, "manager_dashboard.html", {"manager": manager, "campaigns": campaigns})
+
+def create_campaign(request, manager_id):  # ✅ Ensure manager_id is passed
+    manager = get_object_or_404(ElectionManager, id=manager_id)  # ✅ Get Manager Object
+
     if request.method == "POST":
-        name = request.POST["name"]
-        description = request.POST["description"]
-        start_time = request.POST["start_time"]
-        end_time = request.POST["end_time"]
+        name = request.POST.get("name")
+        description = request.POST.get("description")
+        start_time = request.POST.get("start_time")
+        end_time = request.POST.get("end_time")
         image = request.FILES.get("image")
 
-        ElectionCampaign.objects.create(
-            name=name, description=description, start_time=start_time, end_time=end_time, image=image
+        # ✅ Create campaign with manager
+        campaign = ElectionCampaign(
+            manager=manager,  # ✅ Assign manager here
+            name=name,
+            description=description,
+            start_time=start_time,
+            end_time=end_time,
+            image=image
         )
+        campaign.save()
 
-        return redirect("campaign_list")
+        return redirect(f"/manager/{manager.id}/dashboard/")  # ✅ Redirect to manager dashboard
 
-    return render(request, "create_campaign.html")
+    return render(request, "create_campaign.html", {"manager": manager})
 
 # List All Campaigns
 def campaign_list(request, manager_id):
@@ -103,59 +107,70 @@ def campaign_list(request, manager_id):
     return render(request, "campaign_list.html", {"campaigns": campaigns, "manager": manager})
 
 
-# Edit Election Campaign
 def edit_campaign(request, campaign_id):
     campaign = get_object_or_404(ElectionCampaign, id=campaign_id)
+    manager = campaign.manager  # ✅ Get the manager from the campaign
 
     if request.method == "POST":
-        campaign.name = request.POST.get("name", campaign.name)  # Avoids KeyError
-        campaign.description = request.POST.get("description", campaign.description)
-        campaign.start_time = request.POST.get("start_time", campaign.start_time)
-        campaign.end_time = request.POST.get("end_time", campaign.end_time)
+        campaign.name = request.POST.get("name")
+        campaign.description = request.POST.get("description")
+        campaign.start_time = request.POST.get("start_time")
+        campaign.end_time = request.POST.get("end_time")
 
-        if "image" in request.FILES:  # Checks if an image was uploaded
+        if "image" in request.FILES:
             campaign.image = request.FILES["image"]
 
         campaign.save()
-        return redirect("campaign_list")
 
-    return render(request, "edit_campaign.html", {"campaign": campaign})
+        return redirect(f"/manager/{manager.id}/campaigns/")  # ✅ Redirect with `manager_id`
+
+    return render(request, "edit_campaign.html", {"campaign": campaign, "manager": manager})
 
 # Delete Election Campaign
 def delete_campaign(request, campaign_id):
     campaign = get_object_or_404(ElectionCampaign, id=campaign_id)
+    manager_id = campaign.manager.id  # ✅ Get manager ID before deleting
     campaign.delete()
-    return redirect("campaign_list")
+
+    return redirect(f"/manager/{manager_id}/campaigns/")  # ✅ Redirect with `manager_id`
 
 # Create Election Inside a Campaign
 def create_election(request, campaign_id):
     campaign = get_object_or_404(ElectionCampaign, id=campaign_id)
+    manager_id = campaign.manager.id  # ✅ Get the manager ID from the campaign
 
     if request.method == "POST":
-        name = request.POST["name"]  # ✅ Only the name is needed
+        name = request.POST.get("name")
+        if name:
+            Election.objects.create(campaign=campaign, name=name)
 
-        Election.objects.create(campaign=campaign, name=name)
-        return redirect("campaign_list")
+        return redirect(f"/manager/{manager_id}/campaigns/")  # ✅ Redirect with `manager_id`
 
-    return render(request, "create_election.html", {"campaign": campaign})
+    return render(request, "create_election.html", {"campaign": campaign, "manager_id": manager_id})
 
-# Edit Election
 def edit_election(request, election_id):
     election = get_object_or_404(Election, id=election_id)
+    campaign = election.campaign
+    manager_id = campaign.manager.id  # ✅ Get the manager ID from the campaign
 
     if request.method == "POST":
-        election.name = request.POST.get("name", election.name)
-        election.save()
-        return redirect("campaign_list")
+        name = request.POST.get("name")
+        if name:
+            election.name = name
+            election.save()
+            return redirect(f"/manager/{manager_id}/campaigns/")  # ✅ Redirect with `manager_id`
 
-    return render(request, "edit_election.html", {"election": election})
+    return render(request, "edit_election.html", {"election": election, "manager_id": manager_id})
 
 
 def delete_election(request, election_id):
     election = get_object_or_404(Election, id=election_id)
-    campaign_id = election.campaign.id
+    campaign = election.campaign
+    manager_id = campaign.manager.id  # ✅ Get the manager ID from the campaign
+
     election.delete()
-    return redirect("campaign_list")
+
+    return redirect(f"/manager/{manager_id}/campaigns/")  # ✅ Redirect with `manager_id`
 
 def view_profile(request, manager_id):
     manager = get_object_or_404(ElectionManager, id=manager_id)

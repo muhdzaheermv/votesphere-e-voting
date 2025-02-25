@@ -19,25 +19,23 @@
                     <li>
                         {{ election.name }}
                         <a href="/elections/edit/{{ election.id }}/">Edit</a>
-                        <a href="/elections/delete/{{ election.id }}/" onclick="return confirm('Are you sure you want to delete this election?');">Delete</a>
-
-                        <!-- ✅ Add Candidate Button -->
+                        <a href="/elections/delete/{{ election.id }}/" 
+                           onclick="return confirm('Are you sure you want to delete this election?');">Delete</a>
+                        
+                        <!-- ✅ New "Add Candidate" Button -->
                         <a href="/elections/{{ election.id }}/candidates/create/">
                             <button>Add Candidate</button>
                         </a>
-
                     </li>
                 {% empty %}
                     <li>No elections added</li>
                 {% endfor %}
             </ul>
         </li>
-    {% empty %}
-        <li>No campaigns available</li>
     {% endfor %}
 </ul>
 
-<!-- ✅ Back to Dashboard Button -->
+<!-- ✅ Fixed Back Button URL -->
 <a href="/manager/{{ manager.id }}/dashboard/">
     <button>Back to Dashboard</button>
 </a>

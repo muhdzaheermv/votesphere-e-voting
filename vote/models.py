@@ -16,6 +16,7 @@ class ElectionManager(models.Model):
     
 
 class ElectionCampaign(models.Model):
+    manager = models.ForeignKey(ElectionManager, on_delete=models.CASCADE)  # ✅ Link to manager
     name = models.CharField(max_length=200)
     description = models.TextField()
     start_time = models.DateTimeField()

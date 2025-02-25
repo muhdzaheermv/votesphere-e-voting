@@ -37,31 +37,36 @@
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
             
-            <input type="text" name="id_number" placeholder="ID Number" value="{{ request.POST.id_number }}" required>
-            <span class="error">{{ errors.id_number }}</span>
-
-            <input type="file" name="profile_picture">
-
-            <input type="text" name="full_name" placeholder="Full Name" value="{{ request.POST.full_name }}" required>
-            <span class="error">{{ errors.full_name }}</span>
-
-            <input type="text" name="username" placeholder="Username" value="{{ request.POST.username }}" required>
-            <span class="error">{{ errors.username }}</span>
-
-            <input type="text" name="phone_number" placeholder="Phone Number" value="{{ request.POST.phone_number }}" required>
-            <span class="error">{{ errors.phone_number }}</span>
-
-            <input type="email" name="email" placeholder="Email" value="{{ request.POST.email }}" required>
-            <span class="error">{{ errors.email }}</span>
-
-            <input type="text" name="address" placeholder="Address" value="{{ request.POST.address }}" required>
-
-            <input type="password" name="password" placeholder="Password" required>
-            <input type="password" name="confirm_password" placeholder="Confirm Password" required>
-            <span class="error">{{ errors.password }}</span>
-
+            <label>ID Number:</label>
+            <input type="text" name="id_number" required><br>
+        
+            <label>Profile Picture:</label>
+            <input type="file" name="profile_picture"><br>
+        
+            <label>Full Name:</label>
+            <input type="text" name="fullname" required><br>  <!-- ✅ Fix here (fullname, not full_name) -->
+        
+            <label>Username:</label>
+            <input type="text" name="username" required><br>
+        
+            <label>Phone Number:</label>
+            <input type="text" name="phone_number" required maxlength="10"><br>
+        
+            <label>Email:</label>
+            <input type="email" name="email" required><br>
+        
+            <label>Address:</label>
+            <textarea name="address" required></textarea><br>
+        
+            <label>Password:</label>
+            <input type="password" name="password" required minlength="8"><br>
+        
+            <label>Confirm Password:</label>
+            <input type="password" name="confirm_password" required><br>
+        
             <button type="submit">Register</button>
         </form>
+        
         <p>Already have an account? <a href="/login_manager/">Login</a></p>
     </div>
 
