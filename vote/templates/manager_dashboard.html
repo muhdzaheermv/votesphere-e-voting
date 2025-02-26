@@ -23,9 +23,7 @@
                     <p>{{ campaign.description }}</p>
 
                     <a href="/campaigns/edit/{{ campaign.id }}/">Edit</a>
-                    <a href="/campaigns/delete/{{ campaign.id }}/" onclick="return confirm('Are you sure?');">
-                        Delete
-                    </a>
+                    <a href="/campaigns/delete/{{ campaign.id }}/" onclick="return confirm('Are you sure?');">Delete</a>
                     <a href="/campaigns/{{ campaign.id }}/elections/create/">Add Election</a>
                 </li>
             {% endfor %}
@@ -34,9 +32,14 @@
         <p>You have not created any campaigns yet.</p>
     {% endif %}
 
-    <!-- ✅ Fixed URL to include manager ID -->
-    <a href="/manager/{{ manager.id }}/campaigns/create/">
+    <!-- ✅ Create Campaign Button -->
+    <a href="/campaigns/create/">
         <button>Create New Campaign</button>
+    </a>
+
+    <!-- ✅ Campaign List Button -->
+    <a href="{% url 'campaign_list' manager.id %}">
+        <button>View Campaign List</button>
     </a>
 
 </body>

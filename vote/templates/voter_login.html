@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Voter Login</title>
+</head>
+<body>
+    <h2>Voter Login</h2>
+    
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
+    <form method="POST" action="/voter/login/">
+        {% csrf_token %}
+        <label for="student_id">Enter Student ID:</label>
+        <input type="text" name="student_id" required>
+        <button type="submit">Login</button>
+    </form>
+
+    <a href="/">
+        <button>Back to Home</button>
+    </a>
+</body>
+</html>

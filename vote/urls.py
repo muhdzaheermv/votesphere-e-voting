@@ -32,6 +32,13 @@ urlpatterns = [
     path("campaigns/<int:campaign_id>/voters/", views.voters_list, name="voters_list"),
 
     path("campaigns/<int:campaign_id>/voters/delete_all/", views.delete_all_voters, name="delete_all_voters"),
+
+    path("voter/login/", views.voter_login, name="voter_login"),
+    path("voter/dashboard/<int:voter_id>/", views.voter_dashboard, name="voter_dashboard"),
+
+    path("voter/<int:voter_id>/dashboard/", views.voter_dashboard, name="voter_dashboard"),
+    path("voter/<int:voter_id>/vote/", views.vote_page, name="vote_page"),
+    path("elections/<int:election_id>/vote/submit/", views.submit_vote, name="submit_vote"),
     
 
 

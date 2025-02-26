@@ -56,4 +56,12 @@ class Voter(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.student_id})"
+    
+class Vote(models.Model):
+    voter = models.ForeignKey("Voter", on_delete=models.CASCADE)
+    election = models.ForeignKey("Election", on_delete=models.CASCADE)
+    candidate = models.ForeignKey("Candidate", on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ("voter", "election")  # ✅ Prevent multiple votes
 

@@ -1,7 +1,9 @@
 import pandas as pd
 import openpyxl
+from django.http import HttpResponse
+from django.contrib import messages
 from django.shortcuts import render, redirect,get_object_or_404
-from .models import ElectionManager,ElectionCampaign,Election,Candidate,Voter
+from .models import ElectionManager,ElectionCampaign,Election,Candidate,Voter,Vote
 from django.contrib import messages
 from django.core.files.storage import FileSystemStorage
 from django.core.exceptions import ValidationError
@@ -295,5 +297,46 @@ def delete_all_voters(request, campaign_id):
     campaign = get_object_or_404(ElectionCampaign, id=campaign_id)
     Voter.objects.filter(campaign=campaign).delete()
     return redirect("voters_list", campaign_id=campaign.id)
+
+def voter_login(request):
+    if request.method == "POST":
+        student_id = request.POST["student_id"]
+        voter = get_object_or_404(Voter, student_id=student_id)
+
+        request.session["voter_id"] = voter.id  # ✅ Save voter ID in session
+        return redirect("voter_dashboard", voter_id=voter.id)
+
+    return render(request, "voter_login.html")
+
+def voter_dashboard(request, voter_id):
+    voter = Voter.objects.get(id=voter_id)
+    elections = Election.objects.filter(campaign__voter=voter)  # Get elections for this voter
+
+    return render(request, "voter_dashboard.html", {"voter": voter, "elections": elections})
+
+def vote_page(request, voter_id):
+    elections = Election.objects.all()  # ✅ Fetch all elections
+    return render(request, "vote_page.html", {"elections": elections})
+
+def submit_vote(request, election_id):
+    if request.method == "POST":
+        voter = get_object_or_404(Voter, id=request.session.get("voter_id"))  # Ensure voter is logged in
+        election = get_object_or_404(Election, id=election_id)
+        candidate_id = request.POST.get("vote")
+
+        # ✅ Check if the voter has already voted in this election
+        if Vote.objects.filter(voter=voter, election=election).exists():
+            messages.error(request, f"You have already voted in the election: {election.name}.")
+            return redirect("vote_page", voter_id=voter.id)
+
+        # ✅ Save the vote
+        candidate = get_object_or_404(Candidate, id=candidate_id)
+        Vote.objects.create(voter=voter, election=election, candidate=candidate)
+
+        messages.success(request, f"Your vote for {candidate.name} in the election '{election.name}' has been submitted successfully!")
+        return redirect("vote_page", voter_id=voter.id)
+
+    return redirect("vote_page", voter_id=request.session.get("voter_id"))
+
 
 

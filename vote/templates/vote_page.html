@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vote Now</title>
+    <script>
+        function confirmVote(event, form) {
+            event.preventDefault();  // Prevent form submission
+            let confirmed = confirm("Are you sure you want to submit your vote?");
+            if (confirmed) {
+                form.submit();  // If confirmed, submit the form
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <h2>Vote for Your Candidate</h2>
+
+    <!-- ✅ Show Success or Error Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <p style="color: {% if message.tags == 'success' %}green{% else %}red{% endif %};">
+                {{ message }}
+            </p>
+        {% endfor %}
+    {% endif %}
+
+    {% for election in elections %}
+        <h3>{{ election.name }}</h3>
+
+        <form method="POST" action="{% url 'submit_vote' election.id %}" onsubmit="confirmVote(event, this)">
+            {% csrf_token %}
+
+            {% for candidate in election.candidate_set.all %}
+                <input type="radio" name="vote" value="{{ candidate.id }}" required>
+                <img src="{{ candidate.profile_picture.url }}" width="50" height="50">
+                {{ candidate.name }} - {{ candidate.subtitle }}
+                <br>
+            {% endfor %}
+
+            <button type="submit">Submit Vote</button>
+        </form>
+    {% endfor %}
+    <a href="{% url 'voter_login' %}">
+        <button onclick="clearSections()">Voting completed</button>
+    </a>
+    
+    <script>
+        function clearSections() {
+            document.body.innerHTML = ""; // Clears the entire page content
+        }
+    </script>
+
+</body>
+</html>
