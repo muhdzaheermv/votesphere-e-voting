@@ -42,6 +42,10 @@
                 <button>View Voters List</button>
             </a>
 
+            <a href="{% url 'approve_voters' campaign.id %}">
+                <button style="background-color: blue; color: white;">Approve Voters</button>
+            </a>
+
         </li>
     {% endfor %}
 </ul>

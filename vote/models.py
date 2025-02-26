@@ -43,8 +43,8 @@ class Candidate(models.Model):
         return self.name
     
 class Voter(models.Model):
-    campaign = models.ForeignKey('ElectionCampaign', on_delete=models.CASCADE)  # ✅ Add this line
-    student_id = models.CharField(max_length=20, unique=True)
+    campaign = models.ForeignKey(ElectionCampaign, on_delete=models.CASCADE)
+    student_id = models.CharField(max_length=50, unique=True)
     name = models.CharField(max_length=255)
     date_of_birth = models.DateField()
     email = models.EmailField(unique=True)
@@ -52,10 +52,12 @@ class Voter(models.Model):
     course_name = models.CharField(max_length=255)
     department = models.CharField(max_length=255)
     year_of_study = models.IntegerField()
-    semester = models.IntegerField()
+    semester = models.CharField(max_length=20)
+    is_approved = models.BooleanField(default=False)  # ✅ Approval status
 
     def __str__(self):
         return f"{self.name} ({self.student_id})"
+
     
 class Vote(models.Model):
     voter = models.ForeignKey("Voter", on_delete=models.CASCADE)

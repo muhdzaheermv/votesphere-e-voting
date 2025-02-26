@@ -39,6 +39,10 @@ urlpatterns = [
     path("voter/<int:voter_id>/dashboard/", views.voter_dashboard, name="voter_dashboard"),
     path("voter/<int:voter_id>/vote/", views.vote_page, name="vote_page"),
     path("elections/<int:election_id>/vote/submit/", views.submit_vote, name="submit_vote"),
+
+    path('campaigns/<int:campaign_id>/voters/approve/', views.approve_voters, name='approve_voters'),
+    path('voter/<int:voter_id>/approve/', views.approve_voter, name='approve_voter'),
+    path('voter/<int:voter_id>/disapprove/', views.disapprove_voter, name='disapprove_voter'),
     
 
 

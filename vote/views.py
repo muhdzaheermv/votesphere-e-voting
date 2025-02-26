@@ -7,6 +7,7 @@ from .models import ElectionManager,ElectionCampaign,Election,Candidate,Voter,Vo
 from django.contrib import messages
 from django.core.files.storage import FileSystemStorage
 from django.core.exceptions import ValidationError
+from django.urls import reverse
 from django.core.files.storage import default_storage
 
 def index(request):
@@ -300,11 +301,24 @@ def delete_all_voters(request, campaign_id):
 
 def voter_login(request):
     if request.method == "POST":
-        student_id = request.POST["student_id"]
-        voter = get_object_or_404(Voter, student_id=student_id)
+        student_id = request.POST.get("student_id")
 
-        request.session["voter_id"] = voter.id  # ✅ Save voter ID in session
-        return redirect("voter_dashboard", voter_id=voter.id)
+        try:
+            voter = Voter.objects.get(student_id=student_id)
+
+            if not voter.is_approved:  # ✅ Check if voter is approved
+                messages.error(request, "Your account is not approved yet. Please contact the election manager.")
+                return redirect("voter_login")  # 🔄 Redirect back to login page with error
+
+            # ✅ If approved, store voter ID in session
+            request.session["voter_id"] = voter.id
+
+            # ✅ Redirect to voter dashboard with voter ID
+            return redirect(reverse("voter_dashboard", args=[voter.id]))
+
+        except Voter.DoesNotExist:
+            messages.error(request, "Invalid Student ID. Please try again.")
+            return redirect("voter_login")
 
     return render(request, "voter_login.html")
 
@@ -337,6 +351,25 @@ def submit_vote(request, election_id):
         return redirect("vote_page", voter_id=voter.id)
 
     return redirect("vote_page", voter_id=request.session.get("voter_id"))
+
+def approve_voters(request, campaign_id):
+    campaign = get_object_or_404(ElectionCampaign, id=campaign_id)
+    voters = Voter.objects.filter(campaign=campaign)  # Get voters of the campaign
+    return render(request, "approve_voters.html", {"campaign": campaign, "voters": voters})
+
+def approve_voter(request, voter_id):
+    voter = get_object_or_404(Voter, id=voter_id)
+    voter.is_approved = True
+    voter.save()
+    messages.success(request, f"Voter {voter.name} has been approved!")
+    return redirect("approve_voters", campaign_id=voter.campaign.id)
+
+def disapprove_voter(request, voter_id):
+    voter = get_object_or_404(Voter, id=voter_id)
+    voter.is_approved = False
+    voter.save()
+    messages.success(request, f"Voter {voter.name} has been disapproved.")
+    return redirect("approve_voters", campaign_id=voter.campaign.id)
 
 
 
