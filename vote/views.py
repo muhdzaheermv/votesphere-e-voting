@@ -371,5 +371,27 @@ def disapprove_voter(request, voter_id):
     messages.success(request, f"Voter {voter.name} has been disapproved.")
     return redirect("approve_voters", campaign_id=voter.campaign.id)
 
+def election_results(request, election_id):
+    election = get_object_or_404(Election, id=election_id)
+    candidates = Candidate.objects.filter(election=election)
+
+    total_votes = Vote.objects.filter(candidate__election=election).count()
+
+    results = []
+    for candidate in candidates:
+        votes = Vote.objects.filter(candidate=candidate).count()
+        percentage = (votes / total_votes) * 100 if total_votes > 0 else 0
+        results.append({
+            "candidate": candidate,
+            "votes": votes,
+            "percentage": round(percentage, 2)
+        })
+
+    return render(request, "election_results.html", {
+        "election": election,
+        "results": results,
+        "total_votes": total_votes
+    })
+
 
 

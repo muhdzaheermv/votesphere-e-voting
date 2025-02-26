@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Election Results - {{ election.name }}</title>
+</head>
+<body>
+
+    <h2>Election Results for: {{ election.name }}</h2>
+
+    {% if total_votes > 0 %}
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Candidate</th>
+                    <th>Profile Picture</th>
+                    <th>Votes</th>
+                    <th>Percentage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                    <tr>
+                        <td>{{ result.candidate.name }}</td>
+                        <td>
+                            {% if result.candidate.profile_picture %}
+                                <img src="{{ result.candidate.profile_picture.url }}" width="50" height="50">
+                            {% else %}
+                                No Image
+                            {% endif %}
+                        </td>
+                        <td>{{ result.votes }}</td>
+                        <td>{{ result.percentage }}%</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No votes have been cast yet.</p>
+    {% endif %}
+
+    <a href="/manager/{{ request.user.id }}/dashboard/">
+        <button>Back to Dashboard</button>
+    </a>
+
+</body>
+</html>
