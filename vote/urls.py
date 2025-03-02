@@ -45,6 +45,24 @@ urlpatterns = [
     path('voter/<int:voter_id>/disapprove/', views.disapprove_voter, name='disapprove_voter'),
 
     path("elections/<int:election_id>/results/", views.election_results, name="election_results"),
+
+    path('officer/register/', views.register_election_officer, name='register_election_officer'),
+
+     path('officer/login/', views.election_officer_login, name='election_officer_login'),
+    path("officer/<int:officer_id>/dashboard/", views.officer_dashboard, name="officer_dashboard"),
+
+    path("officer/<int:officer_id>/dashboard/", views.officer_dashboard, name="officer_dashboard"),
+    path("campaigns/<int:campaign_id>/voters/upload/", views.upload_voters, name="upload_voters"),
+    path("campaigns/<int:campaign_id>/candidates/manage/", views.manage_candidates, name="manage_candidates"),
+
+    
+    path("campaigns/<int:campaign_id>/candidates/add/", views.add_candidate, name="add_candidate"),
+    path("candidates/<int:candidate_id>/edit/", views.edit_candidate, name="edit_candidate"),
+    path("candidates/<int:candidate_id>/delete/", views.delete_candidate, name="delete_candidate"),
+
+    path("manager/<int:manager_id>/register_presiding_officer/", views.register_presiding_officer, name="register_presiding_officer"),
+    path("presiding_officer/login/", views.presiding_officer_login, name="presiding_officer_login"),
+    path("presiding_officer/<int:officer_id>/dashboard/", views.presiding_officer_dashboard, name="presiding_officer_dashboard"),
     
 
 

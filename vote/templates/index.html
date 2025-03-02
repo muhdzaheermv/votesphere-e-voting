@@ -50,6 +50,17 @@
         <a href="/voter/login/">
             <button>Voters Login</button>
         </a>
+
+        <a href="{% url 'election_officer_login' %}">
+            <button style="background-color: blue; color: white; padding: 10px 20px; border: none; cursor: pointer;">
+                Election Officer Login
+            </button>
+        </a>
+
+        <a href="{% url 'presiding_officer_login' %}">
+            <button>Presiding Officer Login</button>
+        </a>
+        
         
     </div>
 

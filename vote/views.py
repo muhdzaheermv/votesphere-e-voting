@@ -3,7 +3,7 @@ import openpyxl
 from django.http import HttpResponse
 from django.contrib import messages
 from django.shortcuts import render, redirect,get_object_or_404
-from .models import ElectionManager,ElectionCampaign,Election,Candidate,Voter,Vote
+from .models import ElectionManager,ElectionCampaign,Election,Candidate,Voter,Vote,ElectionOfficer,PresidingOfficer
 from django.contrib import messages
 from django.core.files.storage import FileSystemStorage
 from django.core.exceptions import ValidationError
@@ -203,48 +203,59 @@ def edit_profile(request, manager_id):
     return render(request, "edit_profile.html", {"manager": manager})
 
 def create_candidate(request, election_id):
-    election = get_object_or_404(Election, id=election_id)
-    candidates = Candidate.objects.filter(election=election)  # ✅ Fetch candidates for this election
+    election = Election.objects.get(id=election_id)
+
+    # ✅ Allow only Managers & Officers to Add Candidates
+    if not (request.user.is_authenticated and (
+            hasattr(request.user, 'electionmanager') or hasattr(request.user, 'electionofficer'))):
+        return render(request, "error.html", {"error": "You do not have permission to add candidates."})
 
     if request.method == "POST":
         name = request.POST.get("name")
         subtitle = request.POST.get("subtitle")
         profile_picture = request.FILES.get("profile_picture")
 
-        if not name:
-            return render(request, "create_candidate.html", {"error": "Name is required.", "election": election, "candidates": candidates})
+        Candidate.objects.create(
+            election=election,
+            name=name,
+            subtitle=subtitle,
+            profile_picture=profile_picture
+        )
 
-        candidate = Candidate(election=election, name=name, subtitle=subtitle, profile_picture=profile_picture)
-        candidate.save()
+        return redirect("create_candidate", election_id=election.id)
 
-        # ✅ If "Create and Add Another" was clicked, reload form
-        if "create_another" in request.POST:
-            return render(request, "create_candidate.html", {"election": election, "candidates": candidates, "success": "Candidate added!"})
-
-        return redirect(f"/elections/{election.id}/candidates/")  # ✅ Redirect to candidate list
-
-    return render(request, "create_candidate.html", {"election": election, "candidates": candidates})
-
-def delete_candidate(request, candidate_id):
-    candidate = get_object_or_404(Candidate, id=candidate_id)
-    election_id = candidate.election.id
-    candidate.delete()
-    return redirect(f"/elections/{election_id}/candidates/create/")
+    return render(request, "create_candidate.html", {"election": election})
 
 def edit_candidate(request, candidate_id):
-    candidate = get_object_or_404(Candidate, id=candidate_id)
+    candidate = Candidate.objects.get(id=candidate_id)
+
+    # ✅ Allow only Managers & Officers
+    if not (request.user.is_authenticated and (
+            hasattr(request.user, 'electionmanager') or hasattr(request.user, 'electionofficer'))):
+        return render(request, "error.html", {"error": "You do not have permission to edit candidates."})
 
     if request.method == "POST":
         candidate.name = request.POST.get("name")
         candidate.subtitle = request.POST.get("subtitle")
-        
-        if request.FILES.get("profile_picture"):
-            candidate.profile_picture = request.FILES.get("profile_picture")
-        
+
+        if 'profile_picture' in request.FILES:
+            candidate.profile_picture = request.FILES['profile_picture']
+
         candidate.save()
-        return redirect(f"/elections/{candidate.election.id}/candidates/create/")
+        return redirect("create_candidate", election_id=candidate.election.id)
 
     return render(request, "edit_candidate.html", {"candidate": candidate})
+
+def delete_candidate(request, candidate_id):
+    candidate = Candidate.objects.get(id=candidate_id)
+
+    # ✅ Allow only Managers & Officers
+    if not (request.user.is_authenticated and (
+            hasattr(request.user, 'electionmanager') or hasattr(request.user, 'electionofficer'))):
+        return render(request, "error.html", {"error": "You do not have permission to delete candidates."})
+
+    candidate.delete()
+    return redirect("create_candidate", election_id=candidate.election.id)
 
 def upload_voters(request, campaign_id):
     if request.method == "POST":
@@ -254,17 +265,12 @@ def upload_voters(request, campaign_id):
             return render(request, "upload_voters.html", {"error": "No file uploaded"})
 
         try:
-            # ✅ Read the Excel file
             df = pd.read_excel(file)
-
-            # ✅ Ensure campaign exists
-            campaign = ElectionCampaign.objects.get(id=campaign_id)
-
-            # ✅ Iterate through rows and create voter objects
-            voters_to_create = []
+            campaign = get_object_or_404(ElectionCampaign, id=campaign_id)
+            
             for _, row in df.iterrows():
-                voters_to_create.append(Voter(
-                    campaign=campaign,  # ✅ Assign campaign_id
+                Voter.objects.create(
+                    campaign=campaign,
                     student_id=row["Student ID"],
                     name=row["Name"],
                     date_of_birth=row["Date of Birth"],
@@ -273,21 +279,21 @@ def upload_voters(request, campaign_id):
                     course_name=row["Course Name"],
                     department=row["Department"],
                     year_of_study=row["Year of Study"],
-                    semester=row["Semester"]
-                ))
+                    semester=row["Semester"],
+                    is_approved=False  # Default unapproved until election manager approves
+                )
 
-            # ✅ Bulk create voters for performance optimization
-            Voter.objects.bulk_create(voters_to_create)
+            # ✅ Ensure officer_id is retrieved correctly
+            officer = request.session.get("officer_id")  # Get officer_id from session
+            if not officer:
+                return render(request, "upload_voters.html", {"error": "Error: Officer not found in session."})
 
-            return redirect("voters_list", campaign_id=campaign.id)
+            return redirect("officer_dashboard", officer_id=officer)
 
-        except KeyError as e:
-            return render(request, "upload_voters.html", {"error": f"Missing column in Excel: {str(e)}"})
         except Exception as e:
             return render(request, "upload_voters.html", {"error": f"Error: {str(e)}"})
 
     return render(request, "upload_voters.html")
-
 
 def voters_list(request, campaign_id):
     campaign = get_object_or_404(ElectionCampaign, id=campaign_id)
@@ -391,6 +397,181 @@ def election_results(request, election_id):
         "election": election,
         "results": results,
         "total_votes": total_votes
+    })
+
+def register_election_officer(request):
+    if request.method == "POST":
+        id_number = request.POST.get("id_number")
+        full_name = request.POST.get("full_name")
+        username = request.POST.get("username")
+        phone_number = request.POST.get("phone_number")
+        email = request.POST.get("email")
+        password = request.POST.get("password")
+        profile_picture = request.FILES.get("profile_picture")
+        created_by_id = request.POST.get("created_by")  # Election Manager ID
+
+        # Validate if election manager exists
+        try:
+            created_by = ElectionManager.objects.get(id=created_by_id)
+        except ElectionManager.DoesNotExist:
+            messages.error(request, "Invalid Election Manager ID.")
+            return redirect("register_election_officer")
+
+        # Save profile picture if uploaded
+        profile_picture_path = None
+        if profile_picture:
+            profile_picture_path = default_storage.save(f"officer_profiles/{profile_picture.name}", profile_picture)
+
+        # Create new election officer
+        officer = ElectionOfficer.objects.create(
+            id_number=id_number,
+            full_name=full_name,
+            username=username,
+            phone_number=phone_number,
+            email=email,
+            password=password,  # ⚠️ Store passwords securely (Django authentication recommended)
+            profile_picture=profile_picture_path,
+            created_by=created_by
+        )
+
+        messages.success(request, f"Election Officer {full_name} registered successfully!")
+        return redirect("register_election_officer")
+
+    return render(request, "register_election_officer.html")
+
+def election_officer_login(request):
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+
+        officer = ElectionOfficer.objects.filter(username=username, password=password).first()
+
+        if officer:
+            request.session["officer_id"] = officer.id  # ✅ Store officer_id in session
+            return redirect("officer_dashboard", officer_id=officer.id)
+        else:
+            return render(request, "officer_login.html", {"error": "Invalid credentials."})
+
+    return render(request, "election_officer_login.html")
+
+
+def officer_dashboard(request, officer_id):
+    try:
+        officer = ElectionOfficer.objects.get(id=officer_id)
+
+        # ✅ Get campaigns created by the officer's manager
+        campaigns = ElectionCampaign.objects.filter(manager=officer.created_by)
+
+        return render(request, "officer_dashboard.html", {"officer": officer, "campaigns": campaigns})
+    
+    except ElectionOfficer.DoesNotExist:
+        return render(request, "error.html", {"error": "Election Officer not found"})
+    
+def manage_candidates(request, campaign_id):
+    campaign = get_object_or_404(ElectionCampaign, id=campaign_id)
+    candidates = Candidate.objects.filter(election__campaign=campaign)
+
+    return render(request, "manage_candidates.html", {"campaign": campaign, "candidates": candidates})
+
+def add_candidate(request, campaign_id):
+    campaign = get_object_or_404(ElectionCampaign, id=campaign_id)
+    elections = campaign.election_set.all()  # Get all elections in this campaign
+
+    if request.method == "POST":
+        name = request.POST.get("name")
+        election_id = request.POST.get("election")
+        profile_picture = request.FILES.get("profile_picture")
+
+        if not name or not election_id:
+            return render(request, "add_candidate.html", {"campaign": campaign, "elections": elections, "error": "All fields are required."})
+
+        election = get_object_or_404(Election, id=election_id)
+
+        Candidate.objects.create(
+            name=name,
+            election=election,
+            profile_picture=profile_picture
+        )
+
+        return redirect("manage_candidates", campaign_id=campaign_id)
+
+    return render(request, "add_candidate.html", {"campaign": campaign, "elections": elections})
+
+def edit_candidate(request, candidate_id):
+    candidate = get_object_or_404(Candidate, id=candidate_id)
+
+    if request.method == "POST":
+        candidate.name = request.POST["name"]
+        candidate.election_id = request.POST["election"]
+        if "profile_picture" in request.FILES:
+            candidate.profile_picture = request.FILES["profile_picture"]
+        candidate.save()
+
+        return redirect("manage_candidates", campaign_id=candidate.election.campaign.id)
+
+    elections = candidate.election.campaign.election_set.all()
+    return render(request, "edit_candidate.html", {"candidate": candidate, "elections": elections})
+
+def delete_candidate(request, candidate_id):
+    candidate = get_object_or_404(Candidate, id=candidate_id)
+    campaign_id = candidate.election.campaign.id
+    candidate.delete()
+
+    return redirect("manage_candidates", campaign_id=campaign_id)
+
+def register_presiding_officer(request, manager_id):
+    if request.method == "POST":
+        id_number = request.POST["id_number"]
+        profile_picture = request.FILES.get("profile_picture")
+        fullname = request.POST["fullname"]
+        username = request.POST["username"]
+        phone_number = request.POST["phone_number"]
+        email = request.POST["email"]
+        password = request.POST["password"]  # Store securely in real applications
+
+        manager = ElectionManager.objects.get(id=manager_id)  # Get the Election Manager
+
+        # Create and save Presiding Officer
+        officer = PresidingOfficer.objects.create(
+            id_number=id_number,
+            profile_picture=profile_picture,
+            fullname=fullname,
+            username=username,
+            phone_number=phone_number,
+            email=email,
+            created_by=manager,  # ✅ Store manager ID
+            password=password,  # Store securely in production
+        )
+
+        return redirect("manager_dashboard", manager_id=manager.id)  # ✅ Redirect to Election Manager Dashboard
+
+    return render(request, "register_presiding_officer.html", {"manager_id": manager_id})
+
+def presiding_officer_login(request):
+    error_message = None
+
+    if request.method == "POST":
+        username = request.POST["username"]
+        password = request.POST["password"]
+
+        try:
+            officer = PresidingOfficer.objects.get(username=username, password=password)
+            return redirect("presiding_officer_dashboard", officer_id=officer.id)  # ✅ Redirect to dashboard if login successful
+        except PresidingOfficer.DoesNotExist:
+            error_message = "Invalid username or password. Please try again."
+
+    return render(request, "presiding_officer_login.html", {"error_message": error_message})
+
+def presiding_officer_dashboard(request, officer_id):
+    try:
+        officer = PresidingOfficer.objects.get(id=officer_id)
+        campaigns = ElectionCampaign.objects.filter(manager=officer.created_by)  # ✅ Show only campaigns assigned to officer
+    except PresidingOfficer.DoesNotExist:
+        return render(request, "error.html", {"message": "Presiding Officer not found"})
+
+    return render(request, "presiding_officer_dashboard.html", {
+        "officer": officer,
+        "campaigns": campaigns
     })
 
 

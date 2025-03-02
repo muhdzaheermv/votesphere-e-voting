@@ -42,5 +42,15 @@
         <button>View Campaign List</button>
     </a>
 
+    <a href="{% url 'register_election_officer' %}">
+        <button style="background-color: blue; color: white; padding: 10px 20px; border: none; cursor: pointer;">
+            Register Election Officer
+        </button>
+    </a>
+
+    <a href="{% url 'register_presiding_officer' manager.id %}">
+        <button>Register Presiding Officer</button>
+    </a>
+
 </body>
 </html>

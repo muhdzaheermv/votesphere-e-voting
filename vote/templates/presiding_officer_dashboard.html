@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Presiding Officer Dashboard</title>
+</head>
+<body>
+
+    <h2>Welcome, {{ officer.fullname }}</h2>
+    
+    <h3>Your Assigned Election Campaigns</h3>
+
+    {% if campaigns %}
+        <ul>
+            {% for campaign in campaigns %}
+                <li>
+                    <strong>{{ campaign.name }}</strong> <br>
+                    
+                    {% if campaign.image %}
+                        <img src="{{ campaign.image.url }}" width="100" height="100"><br>
+                    {% endif %}
+                    
+                    <p>{{ campaign.description }}</p>
+
+                    <!-- ✅ Approve Voters -->
+                    <a href="{% url 'approve_voters' campaign.id %}">
+                        <button>Approve Voters</button>
+                    </a>
+
+                    <!-- ✅ Manage Candidates -->
+                    <a href="{% url 'manage_candidates' campaign.id %}">
+                        <button>Manage Candidates</button>
+                    </a>
+
+                    <!-- ✅ View Election Results -->
+                    <a href="{% url 'election_results' campaign.id %}">
+                        <button>View Election Results</button>
+                    </a>
+
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No assigned campaigns.</p>
+    {% endif %}
+
+    <br>
+    <a href="/">
+        <button>Logout</button>
+    </a>
+
+</body>
+</html>
