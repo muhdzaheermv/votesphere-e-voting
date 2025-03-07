@@ -33,7 +33,7 @@
     {% endif %}
 
     <!-- ✅ Create Campaign Button -->
-    <a href="/campaigns/create/">
+    <a href="{% url 'create_campaign' manager.id %}">
         <button>Create New Campaign</button>
     </a>
 

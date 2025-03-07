@@ -450,7 +450,7 @@ def election_officer_login(request):
             request.session["officer_id"] = officer.id  # ✅ Store officer_id in session
             return redirect("officer_dashboard", officer_id=officer.id)
         else:
-            return render(request, "officer_login.html", {"error": "Invalid credentials."})
+            return render(request, "election_officer_login.html", {"error": "Invalid credentials."})
 
     return render(request, "election_officer_login.html")
 
