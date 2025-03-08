@@ -1,51 +1,41 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f4f4f4;
-            padding: 50px;
-        }
-        .container {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-            margin: auto;
-        }
-        input, button {
-            width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-        }
-        .error {
-            color: red;
-            font-size: 14px;
-        }
-    </style>
-</head>
-<body>
 
-    <div class="container">
-        <h2>Election Manager Login</h2>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title></title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="{% static 'css/manager_login.css' %}">
+    </head>
+    <body>
         <form method="POST">
             {% csrf_token %}
-            <input type="text" name="username" placeholder="Username" required>
-            <input type="password" name="password" placeholder="Password" required>
-            <button type="submit">Login</button>
-        </form>
-        
-        {% if error %}
-            <p style="color: red;">{{ error }}</p>
+        <div class="form">
+            <div class="title">Election Admin</div>
+            <div class="subtitle">Login</div>
+            <div class="input-container ic1">
+              <input class="input" type="text" name="username" placeholder="" required/>
+              <div class="cut"></div>
+              <label for="username" class="placeholder">Username</label>
+            </div>
+            <div class="input-container ic2">
+              <input class="input" type="password" name="password" placeholder=" " required />
+              <div class="cut"></div>
+              <label for="Password" class="placeholder">Password</label>
+            </div>
+            {% if error %}
+            <p style="font-family: sans-serif; margin-top: 10px; color: red; color: red;">{{ error }}</p>
         {% endif %}
-        <p>Don't have an account? <a href="/register_manager/">Register</a></p>
-    </div>
-
-</body>
+        <button type="text" class="submit">submit</button>
+        <p style="font-family: sans-serif; margin-top: 10px; color: white; font-weight: bold;">Don't have an account? <a style="font-family: sans-serif;text-align: center; text-decoration: none; color: white;" href="{% url 'register_manager' %}">Admin</a></p>
+        <p style="font-family: sans-serif; margin-top: 10px; color: white; font-weight: bold;">Back to  <a style="font-family: sans-serif;text-align: center; text-decoration: none; color: white;" href="{% url 'index' %}">Home</a></p>
+          </div>
+        </form>
+       
+        
+        <script src="" async defer></script>
+    </body>
 </html>
