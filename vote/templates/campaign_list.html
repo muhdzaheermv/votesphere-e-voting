@@ -23,7 +23,7 @@
                            onclick="return confirm('Are you sure you want to delete this election?');">Delete</a>
 
                         <!-- ✅ "Add Candidate" Button -->
-                        <a href="/elections/{{ election.id }}/candidates/create/">
+                        <a href={% url 'add_candidate' campaign.id %}>
                             <button>Add Candidate</button>
                         </a>
 

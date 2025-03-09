@@ -1,6 +1,8 @@
 import pandas as pd
+import re
 import openpyxl
 from django.http import HttpResponse
+from django.contrib.auth import logout
 from django.contrib import messages
 from django.shortcuts import render, redirect,get_object_or_404
 from .models import ElectionManager,ElectionCampaign,Election,Candidate,Voter,Vote,ElectionOfficer,PresidingOfficer
@@ -13,12 +15,11 @@ from django.core.files.storage import default_storage
 def index(request):
     return render(request, 'index.html')
 
-
 def register_manager(request):
     if request.method == "POST":
         id_number = request.POST.get("id_number")
         profile_picture = request.FILES.get("profile_picture")
-        fullname = request.POST.get("fullname")  # ✅ Ensure this matches the model field
+        fullname = request.POST.get("fullname")
         username = request.POST.get("username")
         phone_number = request.POST.get("phone_number")
         email = request.POST.get("email")
@@ -26,33 +27,58 @@ def register_manager(request):
         password = request.POST.get("password")
         confirm_password = request.POST.get("confirm_password")
 
-        # ✅ Check if passwords match
-        if password != confirm_password:
-            return render(request, "register_manager.html", {"error": "Passwords do not match."})
+        errors = {}
 
-        # ✅ Ensure unique fields are not duplicated
-        if ElectionManager.objects.filter(username=username).exists():
-            return render(request, "register_manager.html", {"error": "Username already exists."})
-
-        if ElectionManager.objects.filter(email=email).exists():
-            return render(request, "register_manager.html", {"error": "Email already registered."})
-
+        # ✅ Ensure ID Number is unique
         if ElectionManager.objects.filter(id_number=id_number).exists():
-            return render(request, "register_manager.html", {"error": "ID number already exists."})
+            errors["id_error"] = "ID number already exists."
 
+        # ✅ Ensure Username is unique
+        if ElectionManager.objects.filter(username=username).exists():
+            errors["username_error"] = "Username already exists."
+
+        # ✅ Ensure Email is unique
+        if ElectionManager.objects.filter(email=email).exists():
+            errors["email_error"] = "Email already registered."
+
+        # ✅ Ensure Phone Number is unique
         if ElectionManager.objects.filter(phone_number=phone_number).exists():
-            return render(request, "register_manager.html", {"error": "Phone number already registered."})
+            errors["phone_error"] = "Phone number already registered."
+
+        # ✅ Ensure Full Name does not contain numbers
+        if any(char.isdigit() for char in fullname):
+            errors["fullname_error"] = "No numbers in full name."
+
+        # ✅ Ensure Password has at least 8 characters
+        if len(password) < 8:
+            errors["password_length"] = "Password needs 8 chars"
+
+        # ✅ Ensure Confirm Password matches Password
+        if password != confirm_password:
+            errors["password_error"] = "Passwords do not match."
+
+        # ✅ If errors exist, re-render the form with previous data
+        if errors:
+            return render(request, "register_manager.html", {
+                "errors": errors,
+                "id_number": id_number,
+                "fullname": fullname,
+                "username": username,
+                "phone_number": phone_number,
+                "email": email,
+                "address": address,
+            })
 
         # ✅ Create Election Manager
         manager = ElectionManager(
             id_number=id_number,
             profile_picture=profile_picture,
-            fullname=fullname,  # ✅ Matches model field name
+            fullname=fullname,
             username=username,
             phone_number=phone_number,
             email=email,
             address=address,
-            password=password  # ⚠️ In a real project, hash passwords before saving!
+            password=password  # ⚠️ Store securely in real applications
         )
         manager.save()
 
@@ -402,7 +428,7 @@ def election_results(request, election_id):
 def register_election_officer(request):
     if request.method == "POST":
         id_number = request.POST.get("id_number")
-        full_name = request.POST.get("full_name")
+        fullname = request.POST.get("fullname")
         username = request.POST.get("username")
         phone_number = request.POST.get("phone_number")
         email = request.POST.get("email")
@@ -425,7 +451,7 @@ def register_election_officer(request):
         # Create new election officer
         officer = ElectionOfficer.objects.create(
             id_number=id_number,
-            full_name=full_name,
+            fullname=fullname,
             username=username,
             phone_number=phone_number,
             email=email,
@@ -434,7 +460,7 @@ def register_election_officer(request):
             created_by=created_by
         )
 
-        messages.success(request, f"Election Officer {full_name} registered successfully!")
+        messages.success(request, f"Election Officer {fullname} registered successfully!")
         return redirect("register_election_officer")
 
     return render(request, "register_election_officer.html")
@@ -501,13 +527,19 @@ def edit_candidate(request, candidate_id):
     candidate = get_object_or_404(Candidate, id=candidate_id)
 
     if request.method == "POST":
-        candidate.name = request.POST["name"]
-        candidate.election_id = request.POST["election"]
+        candidate.name = request.POST.get("name", candidate.name)  # Avoids KeyError
+
+        election_id = request.POST.get("election")
+        if election_id:
+            candidate.election_id = election_id  # Updates only if valid input exists
+
         if "profile_picture" in request.FILES:
             candidate.profile_picture = request.FILES["profile_picture"]
-        candidate.save()
 
+        candidate.save()
         return redirect("manage_candidates", campaign_id=candidate.election.campaign.id)
+
+    return render(request, "edit_candidate.html", {"candidate": candidate})
 
     elections = candidate.election.campaign.election_set.all()
     return render(request, "edit_candidate.html", {"candidate": candidate, "elections": elections})
@@ -573,6 +605,11 @@ def presiding_officer_dashboard(request, officer_id):
         "officer": officer,
         "campaigns": campaigns
     })
+
+def logout_view(request):
+    logout(request)  # ✅ Clears user session
+    request.session.flush()  # ✅ Extra safety to clear all session data
+    return redirect('index')
 
 
 
