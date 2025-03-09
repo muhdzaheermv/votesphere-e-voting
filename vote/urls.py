@@ -65,6 +65,9 @@ urlpatterns = [
     path("presiding_officer/<int:officer_id>/dashboard/", views.presiding_officer_dashboard, name="presiding_officer_dashboard"),
 
     path('logout/', views.logout_view, name='logout'),
+
+
+    path('manager/<int:manager_id>/profile/edit/', views.manager_profile, name='manager_profile'),
     
 
 

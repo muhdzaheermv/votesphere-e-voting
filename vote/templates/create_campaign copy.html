@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Election Campaign</title>
+</head>
+<body>
+    <h2>Create Election Campaign</h2>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+    
+        <label>Name:</label>
+        <input type="text" name="name" required><br>
+    
+        <label>Description:</label>
+        <textarea name="description" required></textarea><br>
+    
+        <label>Start Time:</label>
+        <input type="datetime-local" name="start_time" required><br>
+    
+        <label>End Time:</label>
+        <input type="datetime-local" name="end_time" required><br>
+    
+        <label>Image:</label>
+        <input type="file" name="image"><br>
+    
+        <button type="submit">Create Campaign</button>
+    </form>
+    
+    <a href="/manager/{{ manager.id }}/dashboard/">
+        <button>Back to Dashboard</button>
+    </a>
+    
+</body>
+</html>

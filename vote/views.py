@@ -611,5 +611,38 @@ def logout_view(request):
     request.session.flush()  # ✅ Extra safety to clear all session data
     return redirect('index')
 
+def manager_profile(request, manager_id):
+    manager = get_object_or_404(ElectionManager, id=manager_id)
+
+    if request.method == "POST":
+        manager.fullname = request.POST.get("fullname")
+        manager.username = request.POST.get("username")
+        manager.phone_number = request.POST.get("phone_number")
+        manager.email = request.POST.get("email")
+        
+        # Handle profile picture upload
+        if "profile_picture" in request.FILES:
+            manager.profile_picture = request.FILES["profile_picture"]
+
+        # ✅ Password Change (if provided)
+        new_password = request.POST.get("password")
+        confirm_password = request.POST.get("confirm_password")
+        
+        if new_password:
+            if len(new_password) < 8:
+                messages.error(request, "Password must be at least 8 characters long.")
+                return render(request, "manager_profile.html", {"manager": manager})
+            if new_password != confirm_password:
+                messages.error(request, "Passwords do not match.")
+                return render(request, "manager_profile.html", {"manager": manager})
+            
+            manager.password = new_password  # ✅ Update password
+
+        manager.save()
+        messages.success(request, "Profile updated successfully!")
+        return redirect("manager_profile", manager_id=manager.id)
+
+    return render(request, "manager_profile.html", {"manager": manager})
+
 
 
