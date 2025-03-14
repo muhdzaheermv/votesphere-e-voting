@@ -9,6 +9,7 @@ from .models import ElectionManager,ElectionCampaign,Election,Candidate,Voter,Vo
 from django.contrib import messages
 from django.core.files.storage import FileSystemStorage
 from django.core.exceptions import ValidationError
+from django.contrib.auth.hashers import make_password 
 from django.urls import reverse
 from django.core.files.storage import default_storage
 
@@ -436,20 +437,57 @@ def register_election_officer(request):
         phone_number = request.POST.get("phone_number")
         email = request.POST.get("email")
         password = request.POST.get("password")
+        confirm_password = request.POST.get("confirm_password")
         profile_picture = request.FILES.get("profile_picture")
         created_by_id = request.POST.get("created_by")  # Election Manager ID
 
-        # Validate if election manager exists
+        errors = {}
+
+        # ✅ Ensure ID Number is unique
+        if ElectionOfficer.objects.filter(id_number=id_number).exists():
+            errors["id_error"] = "ID number already exists."
+
+        # ✅ Ensure Username is unique
+        if ElectionOfficer.objects.filter(username=username).exists():
+            errors["username_error"] = "Username already exists."
+
+        # ✅ Ensure Email is unique
+        if ElectionOfficer.objects.filter(email=email).exists():
+            errors["email_error"] = "Email already registered."
+
+        # ✅ Ensure Phone Number is unique
+        if ElectionOfficer.objects.filter(phone_number=phone_number).exists():
+            errors["phone_error"] = "Phone number already registered."
+
+        # ✅ Ensure Full Name does not contain numbers
+        if any(char.isdigit() for char in fullname):
+            errors["fullname_error"] = "Full name should not contain numbers."
+
+        # ✅ Ensure Password has at least 8 characters
+        if len(password) < 8:
+            errors["password_length"] = "Password must be at least 8 characters long."
+
+        # ✅ Ensure Confirm Password matches Password
+        if password != confirm_password:
+            errors["password_error"] = "Passwords do not match."
+
+        # ✅ Validate if Election Manager exists
         try:
             created_by = ElectionManager.objects.get(id=created_by_id)
         except ElectionManager.DoesNotExist:
-            messages.error(request, "Invalid Election Manager ID.")
-            return redirect("register_election_officer")
+            errors["created_by_error"] = "Invalid Election Manager ID."
+
+        # If there are errors, re-render the form with errors
+        if errors:
+            return render(request, "register_election_officer.html", {"errors": errors})
 
         # Save profile picture if uploaded
         profile_picture_path = None
         if profile_picture:
             profile_picture_path = default_storage.save(f"officer_profiles/{profile_picture.name}", profile_picture)
+
+        # Securely hash the password before saving
+        hashed_password = make_password(password)
 
         # Create new election officer
         officer = ElectionOfficer.objects.create(
@@ -458,7 +496,7 @@ def register_election_officer(request):
             username=username,
             phone_number=phone_number,
             email=email,
-            password=password,  # ⚠️ Store passwords securely (Django authentication recommended)
+            password=hashed_password,  # Secure password storage
             profile_picture=profile_picture_path,
             created_by=created_by
         )
@@ -555,6 +593,11 @@ def delete_candidate(request, candidate_id):
     return redirect("manage_candidates", campaign_id=campaign_id)
 
 def register_presiding_officer(request, manager_id):
+    errors = {}
+
+    # ✅ Ensure Election Manager ID exists
+    manager = get_object_or_404(ElectionManager, id=manager_id)
+
     if request.method == "POST":
         id_number = request.POST["id_number"]
         profile_picture = request.FILES.get("profile_picture")
@@ -562,11 +605,41 @@ def register_presiding_officer(request, manager_id):
         username = request.POST["username"]
         phone_number = request.POST["phone_number"]
         email = request.POST["email"]
-        password = request.POST["password"]  # Store securely in real applications
+        password = request.POST["password"]
+        confirm_password = request.POST.get("confirm_password")  # ✅ Ensure confirm password is captured
 
-        manager = ElectionManager.objects.get(id=manager_id)  # Get the Election Manager
+        # ✅ Ensure ID Number is unique
+        if PresidingOfficer.objects.filter(id_number=id_number).exists():
+            errors["id_error"] = "ID number already exists."
 
-        # Create and save Presiding Officer
+        # ✅ Ensure Username is unique
+        if PresidingOfficer.objects.filter(username=username).exists():
+            errors["username_error"] = "Username already exists."
+
+        # ✅ Ensure Email is unique
+        if PresidingOfficer.objects.filter(email=email).exists():
+            errors["email_error"] = "Email already registered."
+
+        # ✅ Ensure Phone Number is unique
+        if PresidingOfficer.objects.filter(phone_number=phone_number).exists():
+            errors["phone_error"] = "Phone number already registered."
+
+        # ✅ Ensure Full Name does not contain numbers
+        if any(char.isdigit() for char in fullname):
+            errors["fullname_error"] = "Full name should not contain numbers."
+
+        # ✅ Ensure Password has at least 8 characters
+        if len(password) < 8:
+            errors["password_length"] = "Password must be at least 8 characters long."
+
+        # ✅ Ensure Confirm Password matches Password
+        if password != confirm_password:
+            errors["password_error"] = "Passwords do not match."
+
+        if errors:
+            return render(request, "register_presiding_officer.html", {"errors": errors, "manager_id": manager_id})
+
+        # ✅ Create and save Presiding Officer if no errors
         officer = PresidingOfficer.objects.create(
             id_number=id_number,
             profile_picture=profile_picture,
@@ -574,11 +647,12 @@ def register_presiding_officer(request, manager_id):
             username=username,
             phone_number=phone_number,
             email=email,
-            created_by=manager,  # ✅ Store manager ID
-            password=password,  # Store securely in production
+            created_by=manager,
+            password=password,  # ✅ Hash this in production
         )
 
-        return redirect("manager_dashboard", manager_id=manager.id)  # ✅ Redirect to Election Manager Dashboard
+        messages.success(request, "Presiding Officer registered successfully.")
+        return redirect("manager_dashboard", manager_id=manager.id)  # ✅ Redirect to Dashboard
 
     return render(request, "register_presiding_officer.html", {"manager_id": manager_id})
 

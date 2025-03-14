@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Approve Voters</title>
+</head>
+<body>
+    <h2>Approve Voters for {{ campaign.name }}</h2>
+
+    {% for message in messages %}
+        <p style="color: green;">{{ message }}</p>
+    {% endfor %}
+
+    <table border="1">
+        <tr>
+            <th>Student ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+        {% for voter in voters %}
+            <tr>
+                <td>{{ voter.student_id }}</td>
+                <td>{{ voter.name }}</td>
+                <td>{{ voter.email }}</td>
+                <td>
+                    {% if voter.is_approved %}
+                        <span style="color: green;">Approved</span>
+                    {% else %}
+                        <span style="color: red;">Not Approved</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if not voter.is_approved %}
+                        <a href="{% url 'approve_voter' voter.id %}" onclick="return confirm('Approve this voter?');">
+                            <button>Approve</button>
+                        </a>
+                    {% else %}
+                        <a href="{% url 'disapprove_voter' voter.id %}" onclick="return confirm('Disapprove this voter?');">
+                            <button style="background-color: red; color: white;">Disapprove</button>
+                        </a>
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="5">No voters available.</td>
+            </tr>
+        {% endfor %}
+    </table>
+
+    <br>
+    
+</body>
+</html>
