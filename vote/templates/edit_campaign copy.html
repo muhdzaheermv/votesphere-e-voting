@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Election Campaign</title>
+</head>
+<body>
+
+    <h2>Edit Campaign: {{ campaign.name }}</h2>
+    
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <label>Name:</label>
+        <input type="text" name="name" value="{{ campaign.name }}" required><br>
+    
+        <label>Description:</label>
+        <textarea name="description" required>{{ campaign.description }}</textarea><br>
+    
+        <label>Start Time:</label>
+        <input type="datetime-local" name="start_time" value="{{ campaign.start_time|date:'Y-m-d\TH:i' }}" required><br>
+    
+        <label>End Time:</label>
+        <input type="datetime-local" name="end_time" value="{{ campaign.end_time|date:'Y-m-d\TH:i' }}" required><br>
+    
+        <label>Image:</label>
+        <input type="file" name="image"><br>
+    
+        <button type="submit">Update Campaign</button>
+    </form>
+    
+    <!-- ✅ Fixed Back Button URL -->
+    <a href="/manager/{{ manager.id }}/campaigns/">
+        <button>Back to Campaign List</button>
+    </a>
+    
+
+</body>
+</html>

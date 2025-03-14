@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Candidate</title>
+</head>
+<body>
+
+    <h2>Edit Candidate: {{ candidate.name }}</h2>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <label>Name:</label>
+        <input type="text" name="name" value="{{ candidate.name }}" required><br>
+
+
+        <label>Current Profile Picture:</label><br>
+        {% if candidate.profile_picture %}
+            <img src="{{ candidate.profile_picture.url }}" width="100" height="100"><br>
+        {% else %}
+            <p>No profile picture uploaded.</p>
+        {% endif %}
+
+        <label>Change Profile Picture:</label>
+        <input type="file" name="profile_picture"><br>
+
+        <button type="submit">Update Candidate</button>
+    </form>
+
+    <a href="/elections/{{ candidate.election.id }}/candidates/create/">
+        <button>Cancel</button>
+    </a>
+
+</body>
+</html>

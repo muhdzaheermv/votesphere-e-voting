@@ -126,8 +126,8 @@
                                 </a>
                                 <div class="w3img-grids-info-gd-content mt-4">
                                     <a href="#" class="titile-img d-block">
-                                        <h4 class="mb-2">
-                                            {{ campaign.name }}</h4>
+                                        <h5 class="mb-2">
+                                            {{ campaign.name }}</h5>
                                     </a>
                                     <p class="">{{ campaign.description }}</p>
 
@@ -135,8 +135,36 @@
 
                                     <button type="button" class="btn btn-warning"><a class="text-decoration-none text-white" href="/campaigns/edit/{{ campaign.id }}/">Edit</a></button>
 
-                                    <button type="button" class="btn btn-danger"><a class="text-decoration-none text-white" href="/campaigns/delete/{{ campaign.id }}/" onclick="return confirm('Are you sure?');">Delete</a></button>
+                                    <button type="button" class="btn btn-danger"><a class="text-decoration-none text-white" href="/campaigns/delete/{{ campaign.id }}/" onclick="return confirm('Are you sure?');">Delete</a></button><br><br>
 
+                                    <h5 class="mb-2">Candidate</h5>
+
+                                    <button type="button" class="btn btn-success"><a class="text-decoration-none text-white" href={% url 'add_candidate' campaign.id %}>Add Candidate</a></button>
+                                    <button type="button" class="btn btn-warning"><a class="text-decoration-none text-white" href={% url 'add_candidate' campaign.id %}>Manage Candidate</a></button><br><br>
+
+                                    <h5 class="mb-2">Voter</h5>
+
+                                    <button type="button" class="btn btn-primary"><a class="text-decoration-none text-white" href="/campaigns/{{ campaign.id }}/voters/upload/">Upload</a></button>                                   
+                                    <button type="button" class="btn btn-info"><a class="text-decoration-none text-white" href="/campaigns/{{ campaign.id }}/voters/">View list</a></button>                                  
+                                    <button type="button" class="btn btn-success"><a class="text-decoration-none text-white" href="{% url 'approve_voters' campaign.id %}">Approve Voters</a></button>                                   <br><br>
+
+
+                                    <h5 class="mb-2">Elections</h5>
+                                    {% for election in campaign.election_set.all %}
+                                    <h6 class=m-2>{{ election.name }}</h6>
+
+
+                                    <button type="button" class="btn btn-warning"><a class="text-decoration-none text-white" href="/elections/edit/{{ election.id }}/">Edit</a></button>
+
+                                    <button type="button" class="btn btn-danger"><a class="text-decoration-none text-white" href="/elections/delete/{{ election.id }}/" onclick="return confirm('Are you sure?');">Delete</a></button>
+
+                                    <button type="button" class="btn btn-info"><a class="text-decoration-none text-white" href="{% url 'election_results' election.id %}" >View Result</a></button><br>
+
+
+                                    {% empty %}
+                                    <li>No elections added</li>
+                                    {% endfor %}
+                                    
                                     
                                     
 

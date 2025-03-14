@@ -156,31 +156,34 @@ def edit_campaign(request, campaign_id):
 
         campaign.save()
 
-        return redirect(f"/manager/{manager.id}/campaigns/")  # ✅ Redirect with `manager_id`
+        return redirect(f"/manager/{manager.id}/dashboard/")  # ✅ Redirect with `manager_id`
 
     return render(request, "edit_campaign.html", {"campaign": campaign, "manager": manager})
 
-# Delete Election Campaign
+# 
+
 def delete_campaign(request, campaign_id):
     campaign = get_object_or_404(ElectionCampaign, id=campaign_id)
     manager_id = campaign.manager.id  # ✅ Get manager ID before deleting
     campaign.delete()
 
-    return redirect(f"/manager/{manager_id}/campaigns/")  # ✅ Redirect with `manager_id`
+    return redirect(f"/manager/{manager_id}/dashboard/")
+
 
 # Create Election Inside a Campaign
 def create_election(request, campaign_id):
     campaign = get_object_or_404(ElectionCampaign, id=campaign_id)
     manager_id = campaign.manager.id  # ✅ Get the manager ID from the campaign
+    manager = get_object_or_404(ElectionManager, id=manager_id)
 
     if request.method == "POST":
         name = request.POST.get("name")
         if name:
             Election.objects.create(campaign=campaign, name=name)
 
-        return redirect(f"/manager/{manager_id}/campaigns/")  # ✅ Redirect with `manager_id`
+        return redirect(f"/manager/{manager_id}/dashboard/")  # ✅ Redirect with `manager_id`
 
-    return render(request, "create_election.html", {"campaign": campaign, "manager_id": manager_id})
+    return render(request, "create_election.html", {"campaign": campaign, "manager_id": manager_id,"manager":manager})
 
 def edit_election(request, election_id):
     election = get_object_or_404(Election, id=election_id)
@@ -192,7 +195,7 @@ def edit_election(request, election_id):
         if name:
             election.name = name
             election.save()
-            return redirect(f"/manager/{manager_id}/campaigns/")  # ✅ Redirect with `manager_id`
+            return redirect(f"/manager/{manager_id}/dashboard/")  # ✅ Redirect with `manager_id`
 
     return render(request, "edit_election.html", {"election": election, "manager_id": manager_id})
 
@@ -519,7 +522,7 @@ def add_candidate(request, campaign_id):
             profile_picture=profile_picture
         )
 
-        return redirect("manage_candidates", campaign_id=campaign_id)
+        return redirect("add_candidate", campaign_id=campaign_id)
 
     return render(request, "add_candidate.html", {"campaign": campaign, "elections": elections})
 
