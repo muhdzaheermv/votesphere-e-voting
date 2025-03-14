@@ -9,7 +9,7 @@ from .models import ElectionManager,ElectionCampaign,Election,Candidate,Voter,Vo
 from django.contrib import messages
 from django.core.files.storage import FileSystemStorage
 from django.core.exceptions import ValidationError
-from django.contrib.auth.hashers import make_password 
+from django.contrib.auth.hashers import make_password,check_password
 from django.urls import reverse
 from django.core.files.storage import default_storage
 
@@ -508,16 +508,25 @@ def register_election_officer(request):
 
 def election_officer_login(request):
     if request.method == "POST":
-        username = request.POST.get("username")
-        password = request.POST.get("password")
+        username = request.POST.get("username", "").strip()
+        password = request.POST.get("password", "").strip()
 
-        officer = ElectionOfficer.objects.filter(username=username, password=password).first()
+        # ✅ Ensure fields are not empty
+        if not username or not password:
+            return render(request, "election_officer_login.html", {"error": "Both fields are required."})
 
-        if officer:
-            request.session["officer_id"] = officer.id  # ✅ Store officer_id in session
-            return redirect("officer_dashboard", officer_id=officer.id)
-        else:
-            return render(request, "election_officer_login.html", {"error": "Invalid credentials."})
+        try:
+            officer = ElectionOfficer.objects.get(username=username)
+            
+            # ✅ Secure password checking
+            if check_password(password, officer.password):
+                request.session["officer_id"] = officer.id  # ✅ Store officer_id in session
+                return redirect("officer_dashboard", officer_id=officer.id)
+            else:
+                return render(request, "election_officer_login.html", {"error": "Incorrect password."})
+
+        except ElectionOfficer.DoesNotExist:
+            return render(request, "election_officer_login.html", {"error": "User not found."})
 
     return render(request, "election_officer_login.html")
 
@@ -526,10 +535,17 @@ def officer_dashboard(request, officer_id):
     try:
         officer = ElectionOfficer.objects.get(id=officer_id)
 
+        # ✅ Get the Election Manager (creator of the officer)
+        manager_id = officer.created_by.id  # Assuming created_by is the ElectionManager
+
         # ✅ Get campaigns created by the officer's manager
         campaigns = ElectionCampaign.objects.filter(manager=officer.created_by)
 
-        return render(request, "officer_dashboard.html", {"officer": officer, "campaigns": campaigns})
+        return render(request, "officer_dashboard.html", {
+            "officer": officer,
+            "campaigns": campaigns,
+            "manager_id": manager_id,  # ✅ Pass manager_id to template
+        })
     
     except ElectionOfficer.DoesNotExist:
         return render(request, "error.html", {"error": "Election Officer not found"})
@@ -655,6 +671,70 @@ def register_presiding_officer(request, manager_id):
         return redirect("manager_dashboard", manager_id=manager.id)  # ✅ Redirect to Dashboard
 
     return render(request, "register_presiding_officer.html", {"manager_id": manager_id})
+
+def register_presiding_officer_officer(request, manager_id):
+    errors = {}
+
+    # ✅ Ensure Election Manager ID exists
+    manager = get_object_or_404(ElectionManager, id=manager_id)
+
+    if request.method == "POST":
+        id_number = request.POST["id_number"]
+        profile_picture = request.FILES.get("profile_picture")
+        fullname = request.POST["fullname"]
+        username = request.POST["username"]
+        phone_number = request.POST["phone_number"]
+        email = request.POST["email"]
+        password = request.POST["password"]
+        confirm_password = request.POST.get("confirm_password")  # ✅ Ensure confirm password is captured
+
+        # ✅ Ensure ID Number is unique
+        if PresidingOfficer.objects.filter(id_number=id_number).exists():
+            errors["id_error"] = "ID number already exists."
+
+        # ✅ Ensure Username is unique
+        if PresidingOfficer.objects.filter(username=username).exists():
+            errors["username_error"] = "Username already exists."
+
+        # ✅ Ensure Email is unique
+        if PresidingOfficer.objects.filter(email=email).exists():
+            errors["email_error"] = "Email already registered."
+
+        # ✅ Ensure Phone Number is unique
+        if PresidingOfficer.objects.filter(phone_number=phone_number).exists():
+            errors["phone_error"] = "Phone number already registered."
+
+        # ✅ Ensure Full Name does not contain numbers
+        if any(char.isdigit() for char in fullname):
+            errors["fullname_error"] = "Full name should not contain numbers."
+
+        # ✅ Ensure Password has at least 8 characters
+        if len(password) < 8:
+            errors["password_length"] = "Password must be at least 8 characters long."
+
+        # ✅ Ensure Confirm Password matches Password
+        if password != confirm_password:
+            errors["password_error"] = "Passwords do not match."
+
+        if errors:
+            return render(request, "register_presiding_officer_officer.html", {"errors": errors, "manager_id": manager_id})
+
+        # ✅ Create and save Presiding Officer if no errors
+        officer = PresidingOfficer.objects.create(
+            id_number=id_number,
+            profile_picture=profile_picture,
+            fullname=fullname,
+            username=username,
+            phone_number=phone_number,
+            email=email,
+            created_by=manager,
+            password=password,  # ✅ Hash this in production
+        )
+
+        messages.success(request, "Presiding Officer registered successfully.")
+        return redirect("officer_dashboard", manager_id=manager.id)  # ✅ Redirect to Dashboard
+
+    return render(request, "register_presiding_officer_officer.html", {"manager_id": manager_id})
 
 def presiding_officer_login(request):
     error_message = None

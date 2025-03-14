@@ -61,6 +61,7 @@ urlpatterns = [
     path("candidates/<int:candidate_id>/delete/", views.delete_candidate, name="delete_candidate"),
 
     path("manager/<int:manager_id>/register_presiding_officer/", views.register_presiding_officer, name="register_presiding_officer"),
+    path("manager/<int:manager_id>/register_presiding_officer_officer/", views.register_presiding_officer_officer, name="register_presiding_officer_officer"),
     path("presiding_officer/login/", views.presiding_officer_login, name="presiding_officer_login"),
     path("presiding_officer/<int:officer_id>/dashboard/", views.presiding_officer_dashboard, name="presiding_officer_dashboard"),
 
