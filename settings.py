@@ -23,9 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-ym3pjs*rau+b*8@ra&wxlkj*w1nkzzdr-ju(qc)@cdh2wofzxo'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ["votesphere-e-voting.onrender.com"]
+ALLOWED_HOSTS = ["votesphere-e-voting.onrender.com", "127.0.0.1", "localhost"]
 
 
 
