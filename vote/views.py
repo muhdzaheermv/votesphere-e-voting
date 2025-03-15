@@ -208,7 +208,7 @@ def delete_election(request, election_id):
 
     election.delete()
 
-    return redirect(f"/manager/{manager_id}/campaigns/")  # ✅ Redirect with `manager_id`
+    return redirect(f"/manager/{manager_id}/dashboard/")  # ✅ Redirect with `manager_id`
 
 def view_profile(request, manager_id):
     manager = get_object_or_404(ElectionManager, id=manager_id)
