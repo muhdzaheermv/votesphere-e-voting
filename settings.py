@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import dj_database_url
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,6 +28,11 @@ SECRET_KEY = 'django-insecure-ym3pjs*rau+b*8@ra&wxlkj*w1nkzzdr-ju(qc)@cdh2wofzxo
 DEBUG = False
 
 ALLOWED_HOSTS = ["votesphere-e-voting.onrender.com", "127.0.0.1", "localhost"]
+
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://votesphere-e-voting.onrender.com"
+]
 
 
 
@@ -76,10 +83,11 @@ WSGI_APPLICATION = 'votesphere.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-import dj_database_url
+
 
 DATABASES = {
-    "default": dj_database_url.config(default="postgresql://votesphere_django_render_user:emwu0Vv9nVGbIduTdqanaKWaiPFsLJRW@dpg-cvaobntsvqrc73c0dqv0-a.oregon-postgres.render.com/votesphere_django_render")
+     "default": dj_database_url.config(default=os.getenv("postgresql://votesphere_django_render_user:emwu0Vv9nVGbIduTdqanaKWaiPFsLJRW@dpg-cvaobntsvqrc73c0dqv0-a.oregon-postgres.render.com/votesphere_django_render"))
+    
 }
 
 
